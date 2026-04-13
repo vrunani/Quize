@@ -1,10 +1,10 @@
-
 package com.jfsd.quize.dto;
 
 import com.jfsd.quize.entity.Question.QuestionType;
 
 public class QuestionRequest {
-    private Long testId;
+
+    private String examCode;   // ← replaces testId; all question ops use examCode
     private String questionText;
     private QuestionType questionType;
     private String option1;
@@ -15,8 +15,8 @@ public class QuestionRequest {
     private int marks;
 
     // Getters & Setters
-    public Long getTestId() { return testId; }
-    public void setTestId(Long testId) { this.testId = testId; }
+    public String getExamCode() { return examCode; }
+    public void setExamCode(String examCode) { this.examCode = examCode; }
 
     public String getQuestionText() { return questionText; }
     public void setQuestionText(String questionText) { this.questionText = questionText; }

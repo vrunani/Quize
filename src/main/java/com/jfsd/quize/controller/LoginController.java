@@ -37,27 +37,35 @@ public class LoginController {
 
         return ResponseEntity.ok("User added successfully");
     }
+@PostMapping("/login")
+public ResponseEntity<String> login(@RequestBody LoginRequest request) {
 
-    // LOGIN
-    @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequest request) {
+    Optional<User> optionalUser = userRepository.findById(request.getId());
 
-        Optional<User> optionalUser = userRepository.findByEmail(request.getEmail());
-
-        if (!optionalUser.isPresent()) {
-            return ResponseEntity.badRequest().body("User not found");
-        }
-
-        User user = optionalUser.get();
-
-        if (!user.getPasswordHash().equals(request.getPassword())) {
-            return ResponseEntity.badRequest().body("Incorrect password");
-        }
-
-        if (!user.getIsActive()) {
-            return ResponseEntity.badRequest().body("User account inactive");
-        }
-
-        return ResponseEntity.ok("Login successful as " + user.getRole());
+    // ❌ 1. USER NOT FOUND
+    if (!optionalUser.isPresent()) {
+        return ResponseEntity.badRequest().body("User ID not found");
     }
+
+    User user = optionalUser.get();
+
+    // ❌ 2. WRONG PASSWORD
+    if (!user.getPasswordHash().equals(request.getPassword())) {
+        return ResponseEntity.badRequest().body("Incorrect password");
+    }
+
+    // ❌ 3. INACTIVE USER
+    if (!user.getIsActive()) {
+        return ResponseEntity.badRequest().body("User account inactive");
+    }
+
+    // ❌ 4. ROLE MISMATCH
+    if (request.getRole() == null || 
+    !user.getRole().toString().equalsIgnoreCase(request.getRole())) {
+    return ResponseEntity.status(403).body("You don't have access for this role");
+}
+
+    // ✅ SUCCESS
+    return ResponseEntity.ok("Login successful as " + user.getRole());
+}
 }

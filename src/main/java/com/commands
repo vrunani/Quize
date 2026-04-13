@@ -1,0 +1,23 @@
+DROP DATABASE quizdb
+CREATE DATABASE quizdb
+USE quizdb
+SOURCE C:\Users\Vrunani\OneDrive\Desktop\quize\src\main\resources\schema.sql 
+
+replace this wiht uour schema.sql path and run on the mysql terminal
+
+mvn spring-boot:run
+
+
+git commands:
+Step 1 — Clone the repo first:
+bashgit clone https://github.com/username/repository-name.git
+Step 2 — Navigate INTO the cloned folder:
+bashcd repository-name
+Step 3 — Now pull works:
+bashgit pull origin main
+
+
+push:
+git status
+git add .
+git push -m "msg"

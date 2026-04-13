@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Quizely Register</title>
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+body {
+  background: radial-gradient(circle at 50% 50%,
+    #fff8ef 0%,
+    #ffd9a8 25%,
+    #ffb347 60%,
+    #ff8c42 100%);
+  min-height: 100vh;
+}
+
+/* Floating bubbles */
+.bubble {
+  position: fixed;
+  border-radius: 50%;
+  background: rgba(255,140,66,0.18);
+  animation: floatUp linear infinite;
+  pointer-events: none;
+  bottom: -150px;
+}
+@keyframes floatUp {
+  0% { transform: translateY(0) scale(1); opacity: 0.7; }
+  100% { transform: translateY(-110vh) scale(1.3); opacity: 0; }
+}
+
+/* ORANGE Mouse Glow */
+#glow {
+  position: fixed;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle,
+    rgba(255,165,0,0.45) 0%,
+    rgba(255,140,0,0.25) 35%,
+    transparent 70%);
+  transition: left 0.08s ease, top 0.08s ease;
+  z-index: 0;
+}
+
+/* Input styling */
+.qinput {
+  width: 100%;
+  background: rgba(255,255,255,0.95);
+  border: 2px solid transparent;
+  border-radius: 12px;
+  padding: 10px 15px;
+  font-size: 13px;
+  color: black;
+  outline: none;
+  box-sizing: border-box;
+  transition: all 0.2s;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+.qinput::placeholder { color: #777; }
+
+.qinput:focus {
+  border-color: #ff8c42;
+  transform: translateY(-1px);
+}
+
+/* Role buttons */
+.role-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  padding: 9px 12px;
+  cursor: pointer;
+  border: 2px solid rgba(0,0,0,0.15);
+  background: rgba(255,255,255,0.7);
+  transition: all 0.2s;
+}
+
+.role-btn.active {
+  background: #ff8c42;
+}
+
+.role-btn.active span {
+  color: white;
+}
+
+.role-btn span {
+  color: black;
+  font-size: 13px;
+  font-weight: 600;
+}
+</style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center relative overflow-hidden">
+
+<div id="glow"></div>
+
+<div class="bubble" style="width:90px;height:90px;left:7%;animation-duration:9s;"></div>
+<div class="bubble" style="width:120px;height:120px;left:58%;animation-duration:11s;"></div>
+<div class="bubble" style="width:70px;height:70px;left:85%;animation-duration:8s;"></div>
+
+<div class="fixed top-4 left-5 flex items-center gap-3 z-20">
+  <img src="logo.webp" class="w-10 h-10 rounded-xl bg-white p-1"/>
+  <span class="text-black font-bold text-lg">Quizely</span>
+</div>
+
+<div class="relative z-10 w-80 mx-4 rounded-3xl p-7"
+style="
+background: rgba(255,255,255,0.45);
+backdrop-filter: blur(18px);
+border: 1px solid rgba(255,255,255,0.5);
+box-shadow: 0 12px 40px rgba(255,140,66,0.25);">
+
+<div class="text-center mb-5">
+  <div class="w-12 h-12 rounded-2xl mx-auto mb-3 flex items-center justify-center bg-white">
+    <svg class="w-6 h-6" fill="none" stroke="#ff8c42" stroke-width="2.5" viewBox="0 0 24 24">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+      <circle cx="12" cy="7" r="4"/>
+    </svg>
+  </div>
+
+  <h1 class="text-black text-lg font-bold">Create Account</h1>
+  <p class="text-sm text-black">Join Quizely — it's free!</p>
+</div>
+
+<div class="flex flex-col gap-4">
+
+<div>
+<label class="text-[10px] font-black block mb-1 tracking-widest text-black uppercase">User ID</label>
+<input class="qinput" type="text" placeholder="Enter your ID"/>
+</div>
+
+<div>
+<label class="text-[10px] font-black block mb-1 tracking-widest text-black uppercase">Full Name</label>
+<input class="qinput" type="text" placeholder="Enter your name"/>
+</div>
+
+<div>
+<label class="text-[10px] font-black block mb-1 tracking-widest text-black uppercase">Email Address</label>
+<input class="qinput" type="email" placeholder="you@example.com"/>
+</div>
+
+<div>
+<label class="text-[10px] font-black block mb-1 tracking-widest text-black uppercase">Password</label>
+<input class="qinput" type="password" placeholder="••••••••"/>
+</div>
+
+<div>
+<label class="text-[10px] font-black block mb-2 tracking-widest text-black uppercase">Role</label>
+<div class="flex gap-2">
+<label class="role-btn active" id="btnStudent">
+<input type="radio" hidden checked onchange="switchRole('student')"/>
+<span>Student</span>
+</label>
+
+<label class="role-btn" id="btnTeacher">
+<input type="radio" hidden onchange="switchRole('teacher')"/>
+<span>Teacher</span>
+</label>
+</div>
+</div>
+
+<button class="w-full py-3 rounded-xl font-bold text-sm mt-2 bg-orange-400 text-white hover:scale-105 transition">
+Create Account
+</button>
+
+</div>
+</div>
+
+<script>
+const glow = document.getElementById('glow');
+
+document.addEventListener('mousemove', (e)=>{
+  glow.style.left = e.clientX + 'px';
+  glow.style.top = e.clientY + 'px';
+});
+
+function switchRole(val){
+  let s=document.getElementById('btnStudent');
+  let t=document.getElementById('btnTeacher');
+
+  if(val==='student'){
+    s.classList.add('active');
+    t.classList.remove('active');
+  }else{
+    t.classList.add('active');
+    s.classList.remove('active');
+  }
+}
+</script>
+
+</body>
+</html>

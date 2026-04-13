@@ -20,7 +20,10 @@ public class Test {
     private String examCode;
 
     @Column(name = "created_by")
-    private Long createdBy;
+private String createdBy;
+
+public String getCreatedBy() { return createdBy; }
+public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
 
     @Column(name = "total_marks")
     private int totalMarks;
@@ -59,8 +62,6 @@ public class Test {
     public String getExamCode() { return examCode; }
     public void setExamCode(String examCode) { this.examCode = examCode; }
 
-    public Long getCreatedBy() { return createdBy; }
-    public void setCreatedBy(Long createdBy) { this.createdBy = createdBy; }
 
     public int getTotalMarks() { return totalMarks; }
     public void setTotalMarks(int totalMarks) { this.totalMarks = totalMarks; }

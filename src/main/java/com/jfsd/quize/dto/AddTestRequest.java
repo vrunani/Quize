@@ -7,7 +7,9 @@ public class AddTestRequest {
     private String title;
     private String description;
     private String examCode;
-    private Long createdBy;
+    private String createdBy;
+    public String getCreatedBy() { return createdBy; }
+    public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
     private Integer  totalMarks;
     private Integer durationMinutes;
     private LocalDateTime startTime;
@@ -26,8 +28,6 @@ public class AddTestRequest {
     public String getExamCode() { return examCode; }
     public void setExamCode(String examCode) { this.examCode = examCode; }
 
-    public Long getCreatedBy() { return createdBy; }
-    public void setCreatedBy(Long createdBy) { this.createdBy = createdBy; }
 public Integer getTotalMarks() { return totalMarks; }
 public void setTotalMarks(Integer totalMarks) { this.totalMarks = totalMarks; }
 

@@ -8,11 +8,11 @@
 
     <!-- Parent Spring Boot -->
     <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.5</version>
-        <relativePath/>
-    </parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.4.4</version>
+    <relativePath/>
+</parent>
 
     <!-- Project coordinates -->
     <groupId>com.jfsd</groupId>
@@ -29,11 +29,11 @@
     <!-- Dependencies -->
     <dependencies>
 
-        <!-- Web MVC -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webmvc</artifactId>
-        </dependency>
+<!-- Web MVC -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
 
         
 
@@ -44,7 +44,7 @@
         </dependency>
 
         <!-- MySQL Connector -->
-       <dependency>
+        <dependency>
     <groupId>org.postgresql</groupId>
     <artifactId>postgresql</artifactId>
     <scope>runtime</scope>

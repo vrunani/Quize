@@ -1,4 +1,3 @@
-
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -408,26 +407,22 @@ async function handleLogin(e) {
       })
     });
 
-    const data = await response.text();
-
     if (response.ok) {
+      const data = await response.json();
 
-      if (data.includes("TEACHER")) {
+      // Store full user object so student/teacher pages can read it
+      sessionStorage.setItem('quizely_user', JSON.stringify(data));
+
+      if (data.role === "TEACHER") {
         window.location.href = "/teacher.html";
-      }
-
-      else if (data.includes("STUDENT")) {
+      } else if (data.role === "STUDENT") {
         window.location.href = "/student.html";
+      } else {
+        alert("Unknown role: " + data.role);
       }
-
-      else {
-        alert(data);
-      }
-
-    }
-
-    else {
-      alert(data);
+    } else {
+      const errorText = await response.text();
+      alert(errorText);
     }
 
   }

@@ -486,7 +486,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <div class="toast-wrap" id="toastWrap"></div>
 
 <script>
-const BASE_URL = 'http://localhost:8080';
+const BASE_URL = '';
 
 /* ════════════════════════════════════════
    SESSION
@@ -541,9 +541,13 @@ let completedSubmissions = {}; // testId → submissionId
 
 async function fetchPublishedTests() {
   try {
-    const res = await fetch(`${BASE_URL}/tests/published`);
-    const tests = await res.json();
-    publishedTests = tests || [];
+    const [activeRes, scheduledRes] = await Promise.all([
+      fetch(`${BASE_URL}/student/tests/available`),
+      fetch(`${BASE_URL}/student/tests/scheduled`)
+    ]);
+    const activeTests = activeRes.ok ? await activeRes.json() : [];
+    const scheduledTests = scheduledRes.ok ? await scheduledRes.json() : [];
+    publishedTests = [...(activeTests || []), ...(scheduledTests || [])];
     renderTestCards();
   } catch(e) {
     console.error(e);
@@ -636,7 +640,7 @@ function startCountdown(elId, targetDate, label) {
 async function fetchPerformanceGraph() {
   if (!currentUser) return;
   try {
-    const res = await fetch(`${BASE_URL}/analytics/student/${currentUser.id}`);
+    const res = await fetch(`${BASE_URL}/student/${currentUser.id}/performance`);
     if (!res.ok) return;
     const data = await res.json();
     renderGraph(data);
@@ -657,7 +661,6 @@ function renderGraph(data) {
   const barW = Math.min(50, chartW / data.length - 12);
 
   let svg = `<svg class="chart-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
-  // Y axis labels & gridlines
   [0,25,50,75,100].forEach(pct => {
     const y = PAD.t + chartH - (pct/100)*chartH;
     svg += `<line x1="${PAD.l}" y1="${y}" x2="${W-PAD.r}" y2="${y}" stroke="#e0d8ed" stroke-width="1" stroke-dasharray="4,3"/>`;
@@ -665,16 +668,18 @@ function renderGraph(data) {
   });
 
   data.forEach((item, i) => {
-    const pct = Math.min(100, Math.max(0, item.percentage || item.scorePercentage || 0));
+    const totalMarks = item.totalMarks || 0;
+    const scoredMarks = parseFloat(item.scoredMarks) || 0;
+    const pct = totalMarks > 0 ? Math.min(100, Math.max(0, (scoredMarks / totalMarks) * 100)) : 0;
     const x = PAD.l + i*(chartW/data.length) + (chartW/data.length - barW)/2;
     const barH = (pct/100)*chartH;
     const y = PAD.t + chartH - barH;
     const color = pct >= 70 ? '#03969d' : pct >= 40 ? '#9a6000' : '#b91c1c';
     svg += `<rect x="${x}" y="${y}" width="${barW}" height="${barH}" rx="5" fill="${color}" opacity="0.85"/>`;
     svg += `<text x="${x+barW/2}" y="${y-5}" text-anchor="middle" font-size="10" font-weight="700" fill="${color}">${Math.round(pct)}%</text>`;
-    const label = (item.testTitle || item.title || 'Test').substring(0,10)+(item.testTitle?.length>10?'…':'');
+    const label = (item.testTitle || 'Test').substring(0,10) + ((item.testTitle||'').length>10?'…':'');
     svg += `<text x="${x+barW/2}" y="${H-PAD.b+14}" text-anchor="middle" font-size="10" fill="#83749f">${esc(label)}</text>`;
-    svg += `<text x="${x+barW/2}" y="${H-PAD.b+26}" text-anchor="middle" font-size="9" fill="#b0a6c8">${item.marksObtained||0}/${item.totalMarks||0}</text>`;
+    svg += `<text x="${x+barW/2}" y="${H-PAD.b+26}" text-anchor="middle" font-size="9" fill="#b0a6c8">${Math.round(scoredMarks)}/${totalMarks}</text>`;
   });
 
   svg += `</svg>`;
@@ -706,19 +711,46 @@ async function verifyCode() {
   const code = document.getElementById('examCodeInput').value.trim().toUpperCase();
   if (!code) { showToast('Enter an exam code', 'error'); return; }
   try {
-    const res = await fetch(`${BASE_URL}/tests/find/${code}`);
-    if (!res.ok) { showToast('Invalid exam code. Please check and retry.', 'error'); return; }
-    const test = await res.json();
-    const now = new Date();
-    const start = new Date(test.startTime);
-    const end = new Date(test.endTime);
-    if (now < start) { showToast(`Test hasn't started yet. Starts ${start.toLocaleString()}`, 'error'); return; }
-    if (now > end) { showToast('This test has ended.', 'error'); return; }
-    if (!test.isPublished) { showToast('This test is not published yet.', 'error'); return; }
-
-    // Fetch questions
-    const qRes = await fetch(`${BASE_URL}/questions/test/${test.id}`);
+    // Step 1: fetch questions (validates code, published state, timing server-side)
+    const qRes = await fetch(`${BASE_URL}/student/tests/${code}/questions`);
+    if (!qRes.ok) {
+      const errText = await qRes.text();
+      showToast(errText || 'Invalid exam code. Please check and retry.', 'error');
+      return;
+    }
     const questions = await qRes.json();
+
+    // Step 2: find test metadata — try both camelCase and snake_case field names
+    // because Jackson serialization may differ based on Spring config
+    function getExamCode(t) { return t.examCode || t.exam_code || ''; }
+
+    let test = publishedTests.find(t => getExamCode(t).toUpperCase() === code);
+    if (!test) {
+      const avRes = await fetch(`${BASE_URL}/student/tests/available`);
+      const avTests = avRes.ok ? await avRes.json() : [];
+      test = avTests.find(t => getExamCode(t).toUpperCase() === code);
+      if (test) publishedTests = [...publishedTests, ...avTests.filter(t2 => !publishedTests.find(p => p.id === t2.id))];
+    }
+
+    // Step 3: if still not found, build a minimal test object from what we know
+    // The questions endpoint succeeded so the test definitely exists and is active
+    if (!test) {
+      test = {
+        examCode: code,
+        exam_code: code,
+        title: code,
+        description: '',
+        durationMinutes: 60,
+        totalMarks: questions.reduce((s, q) => s + (q.marks || 0), 0),
+        negativeMarking: 0,
+        showResults: false,
+        startTime: new Date(Date.now() - 1000).toISOString(),
+        endTime: new Date(Date.now() + 86400000).toISOString()
+      };
+    }
+
+    // Always store the typed code directly so startExam() never loses it
+    test.examCode = code;
 
     examState.test = test;
     examState.questions = questions || [];
@@ -726,10 +758,10 @@ async function verifyCode() {
     examState.submissionId = null;
 
     // Show instructions
-    document.getElementById('instrTestName').textContent = test.title;
+    document.getElementById('instrTestName').textContent = test.title || code;
     document.getElementById('instrTestDesc').textContent = test.description || '';
-    document.getElementById('instrDuration').textContent = `${test.durationMinutes} min`;
-    document.getElementById('instrMarks').textContent = `${test.totalMarks}`;
+    document.getElementById('instrDuration').textContent = `${test.durationMinutes || '?'} min`;
+    document.getElementById('instrMarks').textContent = `${test.totalMarks || '?'}`;
     document.getElementById('instrQCount').textContent = `${questions.length}`;
     document.getElementById('instrNeg').textContent = test.negativeMarking > 0 ? `-${test.negativeMarking}` : 'None';
     if (test.negativeMarking > 0) {
@@ -748,29 +780,38 @@ async function verifyCode() {
 }
 
 async function startExam() {
-  if (!currentUser) return;
+  if (!currentUser) {
+    showToast("Session expired. Please log in again.", "error");
+    setTimeout(() => window.location.href = "/login.html", 1500);
+    return;
+  }
+  if (!examState.test || !examState.test.examCode) {
+    showToast("Exam data missing. Please re-enter the exam code.", "error");
+    showCodeScreen();
+    return;
+  }
   try {
-    const res = await fetch(`${BASE_URL}/submissions/start`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ testId: examState.test.id, studentId: currentUser.id })
+    const res = await fetch(`${BASE_URL}/student/tests/start`, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ examCode: examState.test.examCode, studentId: currentUser.id })
     });
-    if (!res.ok) { const t = await res.text(); showToast(t || 'Could not start exam', 'error'); return; }
+    if (!res.ok) { const t = await res.text(); showToast(t || "Could not start exam", "error"); return; }
     const sub = await res.json();
     examState.submissionId = sub.id || sub.submissionId;
     examState.currentQ = 0;
     examState.timeLeft = examState.test.durationMinutes * 60;
 
-    document.getElementById('instrScreen').style.display = 'none';
-    document.getElementById('examBody').style.display = 'flex';
-    document.getElementById('examTestName').textContent = examState.test.title;
+    document.getElementById("instrScreen").style.display = "none";
+    document.getElementById("examBody").style.display = "flex";
+    document.getElementById("examTestName").textContent = examState.test.title;
 
     buildPalette();
     renderQuestion(0);
     startTimer();
   } catch(e) {
     console.error(e);
-    showToast('Failed to start exam', 'error');
+    showToast("Failed to start exam: " + e.message, "error");
   }
 }
 
@@ -855,7 +896,7 @@ async function saveCurrentAnswer() {
     body.textAnswer = txt;
   }
   try {
-    await fetch(`${BASE_URL}/answers/save`, {
+    await fetch(`${BASE_URL}/student/answers/save`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify(body)
@@ -909,7 +950,7 @@ async function submitTest(auto) {
   if (examState.timer) clearInterval(examState.timer);
   await saveCurrentAnswer();
   try {
-    const res = await fetch(`${BASE_URL}/submissions/submit/${examState.submissionId}`, { method: 'PUT' });
+    const res = await fetch(`${BASE_URL}/student/tests/${examState.test.examCode}/submit/${currentUser.id}`, { method: 'PUT' });
     if (!res.ok) { const t=await res.text(); showToast(t||'Submission failed','error'); return; }
 
     // Check if results are enabled
@@ -932,28 +973,40 @@ async function submitTest(auto) {
 
 async function showResult() {
   try {
-    const res = await fetch(`${BASE_URL}/submissions/result/${examState.submissionId}`);
+    const res = await fetch(`${BASE_URL}/student/tests/${examState.test.examCode}/result/${currentUser.id}`);
     if (!res.ok) { throw new Error(); }
     const data = await res.json();
     document.getElementById('examBody').style.display = 'none';
     document.getElementById('resultScreen').style.display = 'flex';
 
-    const pct = data.totalMarks > 0 ? Math.round((data.marksObtained/data.totalMarks)*100) : 0;
-    document.getElementById('resultScore').innerHTML = `${data.marksObtained}<span>/${data.totalMarks}</span>`;
+    const scored = parseFloat(data.totalScore) || 0;
+    const total = data.totalMarks || 0;
+    const pct = total > 0 ? Math.round((scored / total) * 100) : 0;
+
+    // Count correct/wrong from questions array
+    const questions = data.questions || [];
+    let correct = 0, wrong = 0;
+    questions.forEach(q => {
+      if (q.questionType === 'OBJECTIVE') {
+        if (q.selectedOption && q.selectedOption === q.correctOption) correct++;
+        else if (q.selectedOption) wrong++;
+      }
+    });
+
+    document.getElementById('resultScore').innerHTML = `${Math.round(scored)}<span>/${total}</span>`;
     document.getElementById('resultTitle').textContent = pct >= 40 ? '🎉 Congratulations!' : 'Test Completed';
     document.getElementById('resultSub').textContent = `You scored ${pct}% in ${examState.test.title}`;
     document.getElementById('resultIcon').className = `result-icon ${pct>=40?'pass':'submitted'}`;
     document.getElementById('resultStats').innerHTML = `
       <div class="rs-item"><div class="rs-num" style="color:var(--teal-dark)">${pct}%</div><div class="rs-lbl">Score</div></div>
-      <div class="rs-item"><div class="rs-num">${data.correctAnswers||'—'}</div><div class="rs-lbl">Correct</div></div>
-      <div class="rs-item"><div class="rs-num" style="color:var(--red)">${data.wrongAnswers||'—'}</div><div class="rs-lbl">Wrong</div></div>`;
+      <div class="rs-item"><div class="rs-num">${correct}</div><div class="rs-lbl">Correct</div></div>
+      <div class="rs-item"><div class="rs-num" style="color:var(--red)">${wrong}</div><div class="rs-lbl">Wrong</div></div>`;
 
-    // Store for review
+    // Store exam code for review
     if (!completedSubmissions[examState.test.id]) {
-      completedSubmissions[examState.test.id] = examState.submissionId;
+      completedSubmissions[examState.test.id] = examState.test.examCode;
     }
   } catch(e) {
-    // Fallback if result endpoint fails
     document.getElementById('examBody').style.display = 'none';
     document.getElementById('resultScreen').style.display = 'flex';
     document.getElementById('resultScore').textContent = '✓';
@@ -977,20 +1030,22 @@ let allReviewTests = [];
 async function populateReviewSelect() {
   const sel = document.getElementById('reviewTestSelect');
   try {
-    const res = await fetch(`${BASE_URL}/tests/completed`);
-    const tests = await res.json();
-    allReviewTests = tests || [];
+    const [avRes, schRes] = await Promise.all([
+      fetch(`${BASE_URL}/student/tests/available`),
+      fetch(`${BASE_URL}/student/tests/scheduled`)
+    ]);
+    const avTests = avRes.ok ? await avRes.json() : [];
+    const schTests = schRes.ok ? await schRes.json() : [];
+    // Combine and deduplicate by id
+    const seen = new Set();
+    allReviewTests = [...(avTests||[]), ...(schTests||[])].filter(t => {
+      if (seen.has(t.id)) return false;
+      seen.add(t.id); return true;
+    });
     sel.innerHTML = `<option value="">— Choose a completed test —</option>` +
-      tests.map(t => `<option value="${t.id}">${esc(t.title)}</option>`).join('');
+      allReviewTests.map(t => `<option value="${t.id}">${esc(t.title)}</option>`).join('');
   } catch(e) {
-    // Fall back to published tests
-    try {
-      const res = await fetch(`${BASE_URL}/tests/published`);
-      const tests = await res.json();
-      allReviewTests = tests || [];
-      sel.innerHTML = `<option value="">— Choose a test —</option>` +
-        tests.map(t => `<option value="${t.id}">${esc(t.title)}</option>`).join('');
-    } catch(e2) { console.error(e2); }
+    console.error(e);
   }
 }
 
@@ -1011,61 +1066,59 @@ async function loadReviewQuestions() {
   area.innerHTML = `<div class="empty-state" style="background:#fff;border-radius:16px;border:1px solid var(--border);padding:48px"><h3>Loading review…</h3></div>`;
 
   try {
-    // Get student's submission for this test
-    const subRes = await fetch(`${BASE_URL}/submissions/test/${testId}`);
-    const subs = await subRes.json();
-    const mySub = subs.find(s => s.studentId === currentUser.id || s.student?.id === currentUser.id);
-    if (!mySub) {
-      area.innerHTML = `<div class="empty-state" style="background:#fff;border-radius:16px;border:1px solid var(--border);padding:48px"><h3>No submission found</h3><p>You may not have taken this test.</p></div>`;
+    // Use the student result endpoint: GET /student/tests/{examCode}/result/{studentId}
+    const resultRes = await fetch(`${BASE_URL}/student/tests/${test.examCode}/result/${currentUser.id}`);
+    if (!resultRes.ok) {
+      const errText = await resultRes.text();
+      area.innerHTML = `<div class="empty-state" style="background:#fff;border-radius:16px;border:1px solid var(--border);padding:48px"><h3>No submission found</h3><p>${esc(errText) || 'You may not have taken this test.'}</p></div>`;
       return;
     }
 
-    const [resultRes, qRes] = await Promise.all([
-      fetch(`${BASE_URL}/submissions/result/${mySub.id}`),
-      fetch(`${BASE_URL}/questions/test/${testId}`)
-    ]);
     const result = await resultRes.json();
-    const questions = await qRes.json();
-    const answers = result.answers || mySub.answers || [];
-
-    const pct = result.totalMarks > 0 ? Math.round((result.marksObtained/result.totalMarks)*100) : 0;
+    // ResultResponse fields: totalScore, totalMarks, questions (array of QuestionResult)
+    const scored = parseFloat(result.totalScore) || 0;
+    const total = result.totalMarks || 0;
+    const pct = total > 0 ? Math.round((scored / total) * 100) : 0;
+    const questions = result.questions || [];
 
     let html = `
       <div class="panel" style="text-align:center;margin-bottom:16px">
-        <div style="font-size:32px;font-weight:800;color:var(--purple-dark)">${result.marksObtained}<span style="font-size:16px;font-weight:500;color:var(--text-muted)">/${result.totalMarks}</span></div>
-        <div style="font-size:14px;color:var(--text-muted);margin-top:4px">${pct}% — ${test.title}</div>
+        <div style="font-size:32px;font-weight:800;color:var(--purple-dark)">${Math.round(scored)}<span style="font-size:16px;font-weight:500;color:var(--text-muted)">/${total}</span></div>
+        <div style="font-size:14px;color:var(--text-muted);margin-top:4px">${pct}% — ${esc(test.title)}</div>
       </div>`;
 
     questions.forEach((q, i) => {
-      const ans = answers.find(a => a.questionNumber === q.questionNumber);
-      const qNum = i + 1;
-
+      const qNum = q.questionNumber || (i + 1);
       let ansBlock = '';
+
       if (q.questionType === 'OBJECTIVE') {
-        const opts = [q.option1, q.option2, q.option3, q.option4];
         const correct = q.correctOption;
-        const selected = ans?.selectedOption;
-        const isCorrect = selected === correct;
+        const selected = q.selectedOption;
+        const isCorrect = selected && selected === correct;
+        // Option texts are not in ResultResponse, so show option numbers
         ansBlock = `
           <div class="review-ans">
             <div class="ans-row ${isCorrect ? 'ans-correct' : (selected ? 'ans-wrong' : '')}">
               <div>
                 <div class="ans-label">Your Answer</div>
-                ${selected ? `Option ${selected}: ${esc(opts[selected-1]||'—')}` : '<em>Not answered</em>'}
+                ${selected ? `Option ${selected}` : '<em>Not answered</em>'}
               </div>
             </div>
-            ${!isCorrect ? `<div class="ans-row ans-correct"><div><div class="ans-label">Correct Answer</div>Option ${correct}: ${esc(opts[correct-1]||'—')}</div></div>` : ''}
+            ${!isCorrect ? `<div class="ans-row ans-correct"><div><div class="ans-label">Correct Answer</div>Option ${correct}</div></div>` : ''}
           </div>`;
       } else {
+        const marksAwarded = q.marksAwarded !== null && q.marksAwarded !== undefined ? parseFloat(q.marksAwarded) : null;
         ansBlock = `
           <div class="review-ans">
             <div class="ans-row ans-subjective">
               <div>
                 <div class="ans-label">Your Answer</div>
-                ${esc(ans?.textAnswer||'Not answered')}
+                ${esc(q.textAnswer || 'Not answered')}
               </div>
             </div>
-            ${ans?.marksAwarded !== undefined ? `<div class="marks-awarded">Marks awarded: ${ans.marksAwarded} / ${q.marks}</div>` : '<div class="marks-awarded">Pending review by teacher</div>'}
+            ${marksAwarded !== null
+              ? `<div class="marks-awarded">Marks awarded: ${marksAwarded} / ${q.maxMarks}</div>`
+              : '<div class="marks-awarded">Pending review by teacher</div>'}
           </div>`;
       }
 
@@ -1074,7 +1127,7 @@ async function loadReviewQuestions() {
           <div class="review-q-hd">
             <div class="review-q-num">${qNum}</div>
             <div class="review-q-text">${esc(q.questionText)}</div>
-            <div style="font-size:11px;font-weight:600;color:var(--text-muted);white-space:nowrap;margin-left:8px">${q.marks} mk</div>
+            <div style="font-size:11px;font-weight:600;color:var(--text-muted);white-space:nowrap;margin-left:8px">${q.maxMarks} mk</div>
           </div>
           ${ansBlock}
         </div>`;
@@ -1093,7 +1146,7 @@ async function loadReviewQuestions() {
 async function fetchNotifications() {
   if (!currentUser) return;
   try {
-    const res = await fetch(`${BASE_URL}/notifications/${currentUser.id}`);
+    const res = await fetch(`${BASE_URL}/student/${currentUser.id}/notifications`);
     const data = await res.json();
     const list = document.getElementById('notifList');
     const unread = data.filter(n => !n.isRead).length;
@@ -1124,7 +1177,7 @@ async function markRead(notifId, el) {
   const dot = el.querySelector('.notif-dot-badge');
   if (dot) dot.remove();
   try {
-    await fetch(`${BASE_URL}/notifications/read/${notifId}`, { method: 'PUT' });
+    await fetch(`${BASE_URL}/student/notifications/${notifId}/read`, { method: 'PUT' });
     fetchNotifications(); // refresh dot counts
   } catch(e) { console.error(e); }
 }

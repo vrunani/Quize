@@ -10,6 +10,8 @@ import com.jfsd.quize.entity.Test;
 import com.jfsd.quize.repository.TestRepository;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -30,31 +32,16 @@ public class TestController {
             return ResponseEntity.badRequest().body("examCode is required");
 
         if (testRepository.findByExamCode(request.getExamCode()).isPresent())
-            return ResponseEntity.badRequest().body("Test with examCode '"
-                + request.getExamCode() + "' already exists");
+            return ResponseEntity.badRequest().body(
+                "Test with examCode '" + request.getExamCode() + "' already exists");
 
-        Test test = new Test();
-        test.setTitle(request.getTitle());
-        test.setDescription(request.getDescription());
-        test.setExamCode(request.getExamCode());
-        test.setCreatedBy(request.getCreatedBy());
-        test.setTotalMarks(request.getTotalMarks() != null ? request.getTotalMarks() : 0);
-        test.setDurationMinutes(request.getDurationMinutes() != null ? request.getDurationMinutes() : 0);
-        test.setStartTime(request.getStartTime());
-        test.setEndTime(request.getEndTime());
-        test.setNegativeMarking(
-            request.getNegativeMarking() != null ? request.getNegativeMarking() : BigDecimal.ZERO);
-        test.setIsPublished(
-            request.getIsPublished() != null ? request.getIsPublished() : false);
-        test.setShowResults(
-            request.getShowResults() != null ? request.getShowResults() : false);
-
+        Test test = buildTest(new Test(), request);
         testRepository.save(test);
         return ResponseEntity.ok("Test added successfully with examCode: " + test.getExamCode());
     }
 
     // ─────────────────────────────────────────────────────────────
-    // UPDATE TEST (by examCode — no internal ID needed)
+    // UPDATE TEST
     // PUT /tests/update/{examCode}
     // ─────────────────────────────────────────────────────────────
     @PutMapping("/update/{examCode}")
@@ -65,7 +52,6 @@ public class TestController {
             return ResponseEntity.badRequest().body("Test not found with examCode: " + examCode);
 
         Test test = optional.get();
-
         if (request.getTitle() != null)           test.setTitle(request.getTitle());
         if (request.getDescription() != null)     test.setDescription(request.getDescription());
         if (request.getCreatedBy() != null)       test.setCreatedBy(request.getCreatedBy());
@@ -76,14 +62,13 @@ public class TestController {
         if (request.getNegativeMarking() != null) test.setNegativeMarking(request.getNegativeMarking());
         if (request.getIsPublished() != null)     test.setIsPublished(request.getIsPublished());
         if (request.getShowResults() != null)     test.setShowResults(request.getShowResults());
-        // Note: examCode itself is intentionally NOT updatable here to keep it stable as the key
 
         testRepository.save(test);
         return ResponseEntity.ok("Test updated successfully for examCode: " + examCode);
     }
 
     // ─────────────────────────────────────────────────────────────
-    // DELETE TEST (by examCode — no internal ID needed)
+    // DELETE TEST
     // DELETE /tests/delete/{examCode}
     // ─────────────────────────────────────────────────────────────
     @DeleteMapping("/delete/{examCode}")
@@ -94,33 +79,82 @@ public class TestController {
             return ResponseEntity.badRequest().body("Test not found with examCode: " + examCode);
 
         Long testId = optional.get().getId();
-
-        // Delete all questions for this test first (avoid FK constraint)
         questionRepository.deleteAllByTestId(testId);
-
         testRepository.deleteById(testId);
         return ResponseEntity.ok("Test deleted successfully for examCode: " + examCode);
     }
 
     // ─────────────────────────────────────────────────────────────
-    // GET TEST BY EXAM CODE
+    // GET BY EXAM CODE
     // GET /tests/find/{examCode}
     // ─────────────────────────────────────────────────────────────
     @GetMapping("/find/{examCode}")
     public ResponseEntity<?> getTest(@PathVariable String examCode) {
-        Optional<Test> optional = testRepository.findByExamCode(examCode);
-        if (!optional.isPresent())
-            return ResponseEntity.badRequest().body("Test not found with examCode: " + examCode);
-
-        return ResponseEntity.ok(optional.get());
+        return testRepository.findByExamCode(examCode)
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElse(ResponseEntity.badRequest().body("Test not found with examCode: " + examCode));
     }
 
     // ─────────────────────────────────────────────────────────────
-    // GET ALL TESTS
+    // GET ALL TESTS (draft + published)
     // GET /tests/all
     // ─────────────────────────────────────────────────────────────
     @GetMapping("/all")
     public ResponseEntity<?> getAllTests() {
         return ResponseEntity.ok(testRepository.findAll());
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // GET PUBLISHED TESTS  (FIX #3 — was missing, student dashboard needs it)
+    // GET /tests/published
+    // Returns all tests where isPublished=true (includes upcoming + active)
+    // ─────────────────────────────────────────────────────────────
+    @GetMapping("/published")
+    public ResponseEntity<?> getPublishedTests() {
+        List<Test> tests = testRepository.findByIsPublished(true);
+        return ResponseEntity.ok(tests);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // GET ONGOING TESTS
+    // GET /tests/ongoing
+    // isPublished=true AND startTime <= now <= endTime
+    // ─────────────────────────────────────────────────────────────
+    @GetMapping("/ongoing")
+    public ResponseEntity<?> getOngoingTests() {
+        LocalDateTime now = LocalDateTime.now();
+        List<Test> tests = testRepository
+            .findByIsPublishedAndStartTimeBeforeAndEndTimeAfter(true, now, now);
+        return ResponseEntity.ok(tests);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // GET COMPLETED TESTS  (FIX #3 — needed for student review filter)
+    // GET /tests/completed
+    // isPublished=true AND endTime < now
+    // ─────────────────────────────────────────────────────────────
+    @GetMapping("/completed")
+    public ResponseEntity<?> getCompletedTests() {
+        LocalDateTime now = LocalDateTime.now();
+        List<Test> tests = testRepository.findByEndTimeBefore(now);
+        return ResponseEntity.ok(tests);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // private helper — avoids duplicate mapping logic
+    // ─────────────────────────────────────────────────────────────
+    private Test buildTest(Test test, AddTestRequest r) {
+        test.setTitle(r.getTitle());
+        test.setDescription(r.getDescription());
+        test.setExamCode(r.getExamCode());
+        test.setCreatedBy(r.getCreatedBy());
+        test.setTotalMarks(r.getTotalMarks()      != null ? r.getTotalMarks()      : 0);
+        test.setDurationMinutes(r.getDurationMinutes() != null ? r.getDurationMinutes() : 0);
+        test.setStartTime(r.getStartTime());
+        test.setEndTime(r.getEndTime());
+        test.setNegativeMarking(r.getNegativeMarking() != null ? r.getNegativeMarking() : BigDecimal.ZERO);
+        test.setIsPublished(r.getIsPublished()     != null ? r.getIsPublished()     : false);
+        test.setShowResults(r.getShowResults()     != null ? r.getShowResults()     : false);
+        return test;
     }
 }

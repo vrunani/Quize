@@ -319,7 +319,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <div class="view active" id="view-dashboard">
   <div class="stats-grid">
     <div class="stat-card teal"><div class="stat-num" id="stat-total">—</div><div class="stat-lbl">Total Tests</div></div>
-    <div class="stat-card purple"><div class="stat-num">148</div><div class="stat-lbl">Students</div></div>
+    <!-- Change line 322 to: -->
+<div class="stat-card purple"><div class="stat-num" id="stat-students">—</div><div class="stat-lbl">Students</div></div>
     <div class="stat-card default"><div class="stat-num" id="stat-live">—</div><div class="stat-lbl">Published</div></div>
     <div class="stat-card amber"><div class="stat-num" id="stat-draft">—</div><div class="stat-lbl">Drafts</div></div>
   </div>
@@ -628,6 +629,16 @@ let allTests = [];
 let currentQType = "OBJECTIVE";
 let currentRole  = "STUDENT";
 
+async function updateStats() {
+  document.getElementById('stat-total').textContent = allTests.length;
+  document.getElementById('stat-live').textContent  = allTests.filter(t => t.isPublished).length;
+  document.getElementById('stat-draft').textContent = allTests.filter(t => !t.isPublished).length;
+  try {
+    const res = await fetch(`${BASE_URL}/api/auth/users/count`);
+    const data = await res.json();
+    document.getElementById('stat-students').textContent = data.studentCount;
+  } catch(e) { document.getElementById('stat-students').textContent = '?'; }
+}
 /* ════════════════════════════════════════
    TOAST
 ════════════════════════════════════════ */
@@ -1092,10 +1103,13 @@ async function loadStudentResults() {
     const res  = await fetch(`${BASE_URL}/submissions/matrix/${test.id}`);
     const data = await res.json();
     if (!data.length) { area.innerHTML = '<div class="empty-state" style="background:#fff;border-radius:14px;border:1px solid var(--border)"><h3>No submissions yet</h3></div>'; return; }
-    const rows = data.map(r => {
-      const sc = r.score >= 75 ? 'score-high' : r.score >= 50 ? 'score-mid' : 'score-low';
-      return `<tr><td>${r.studentId}</td><td><span class="score-pill ${sc}">${r.score}</span></td></tr>`;
-    }).join('');
+    const sc = r.totalScore >= 75 ? 'score-high' : r.totalScore >= 50 ? 'score-mid' : 'score-low';
+return `<tr>
+  <td>${r.studentName || r.studentId}</td>
+  <td><span class="score-pill ${sc}">${r.totalScore} / ${r.totalMarks}</span></td>
+  <td>${r.status}</td>
+  <td>${r.submittedAt ? new Date(r.submittedAt).toLocaleString() : '—'}</td>
+</tr>`;
     area.innerHTML = `<div class="result-table-wrap"><table class="result-table"><thead><tr><th>Student ID</th><th>Score</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   } catch (err) {
     console.error(err); area.innerHTML = '<div class="empty-state" style="background:#fff;border-radius:14px;border:1px solid var(--border)"><h3>Error loading results</h3></div>';
@@ -1109,19 +1123,75 @@ async function loadGrading() {
   const examCode = document.getElementById('gradeTestSelect').value;
   const stuId    = document.getElementById('gradeStudentSelect').value;
   const area     = document.getElementById('gradingArea');
-  if (!examCode || !stuId) { showToast('Select both a test and a student.', 'error'); return; }
+  if (!examCode) { showToast('Select a test.', 'error'); return; }
   const test = allTests.find(t => t.examCode === examCode);
   if (!test) return;
+
   try {
     const res  = await fetch(`${BASE_URL}/submissions/test/${test.id}`);
     const data = await res.json();
-    console.log('Grading data:', data);
-    area.innerHTML = '<div class="empty-state" style="background:#fff;border-radius:14px;border:1px solid var(--border)"><h3>Loaded (see console)</h3><p>Connect your grading UI to the response.</p></div>';
+    
+    // Filter to the selected student if chosen
+    const submissions = stuId ? data.filter(s => s.studentId === stuId) : data;
+    if (!submissions.length) {
+      area.innerHTML = '<div class="empty-state"><h3>No submissions found</h3></div>';
+      return;
+    }
+
+    let html = '';
+    for (const sub of submissions) {
+      const subjAnswers = sub.answers.filter(a => a.questionType === 'SUBJECTIVE');
+      if (!subjAnswers.length) continue;
+
+      html += `<div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;border:1px solid var(--border)">
+        <div style="font-weight:600;margin-bottom:12px">Student: ${sub.studentName} (${sub.studentId})</div>`;
+
+      for (const ans of subjAnswers) {
+        const graded = ans.answerStatus === 'MANUAL' || ans.answerStatus === 'CHECKED';
+        html += `<div style="margin-bottom:12px;padding:12px;background:var(--bg);border-radius:8px">
+          <div style="font-size:13px;font-weight:500;margin-bottom:4px">Q${ans.questionNumber}: ${ans.questionText}</div>
+          <div style="font-size:12px;color:var(--text-hint);margin-bottom:8px">Max marks: ${ans.maxMarks}</div>
+          <div style="background:#f9f9f9;border-radius:6px;padding:10px;margin-bottom:8px;font-size:13px">
+            <b>Student Answer:</b> ${ans.textAnswer || '<i style="color:#aaa">No answer</i>'}
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="number" id="marks-${ans.answerId}" 
+              placeholder="Marks" min="0" max="${ans.maxMarks}" 
+              value="${graded ? ans.marksAwarded : ''}"
+              style="width:90px;padding:7px 10px;border-radius:8px;border:1.5px solid var(--border);font-size:13px"/>
+            <button onclick="submitGrade(${ans.answerId}, ${ans.maxMarks})" 
+              style="padding:7px 14px;border-radius:8px;border:none;background:var(--teal-dark);color:#fff;cursor:pointer;font-size:13px">
+              ${graded ? 'Update' : 'Submit Grade'}
+            </button>
+            ${graded ? `<span style="color:green;font-size:12px">✓ Graded: ${ans.marksAwarded}/${ans.maxMarks}</span>` : ''}
+          </div>
+        </div>`;
+      }
+      html += '</div>';
+    }
+
+    area.innerHTML = html || '<div class="empty-state"><h3>No subjective questions</h3></div>';
   } catch (err) {
-    console.error(err);
+    console.error(err); showToast('Error loading grading data.', 'error');
   }
 }
 
+async function submitGrade(answerId, maxMarks) {
+  const input = document.getElementById(`marks-${answerId}`);
+  const marks = parseFloat(input.value);
+  if (isNaN(marks) || marks < 0 || marks > maxMarks) {
+    showToast(`Enter marks between 0 and ${maxMarks}`, 'error'); return;
+  }
+  try {
+    const res = await fetch(`${BASE_URL}/submissions/grade/${answerId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ marksAwarded: marks, checkedBy: currentUser?.id || 'teacher' })
+    });
+    if (res.ok) { showToast('Grade saved!', 'success'); loadGrading(); }
+    else { const t = await res.text(); showToast(t || 'Grade failed', 'error'); }
+  } catch(e) { showToast('Server error.', 'error'); }
+}
 /* ════════════════════════════════════════
    NOTIFICATIONS
    FIX #6: actually POST to /notifications/send

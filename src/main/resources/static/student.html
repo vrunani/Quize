@@ -948,29 +948,31 @@ function confirmEndTest() {
 
 async function submitTest(auto) {
   if (examState.timer) clearInterval(examState.timer);
-  await saveCurrentAnswer();
+  try {
+    await saveCurrentAnswer();
+  } catch(e) { /* ignore save errors, still try to submit */ }
   try {
     const res = await fetch(`${BASE_URL}/student/tests/${examState.test.examCode}/submit/${currentUser.id}`, { method: 'PUT' });
     if (!res.ok) { const t=await res.text(); showToast(t||'Submission failed','error'); return; }
 
-    // Check if results are enabled
+    // Always show the "submitted" screen first
+    document.getElementById('examBody').style.display = 'none';
+    document.getElementById('resultScreen').style.display = 'flex';
+    document.getElementById('resultScore').textContent = '✓';
+    document.getElementById('resultTitle').textContent = 'Test Submitted!';
+    document.getElementById('resultSub').textContent = 'Your answers have been recorded.';
+    document.getElementById('resultStats').innerHTML = '';
+    document.getElementById('resultIcon').className = 'result-icon submitted';
+
+    // Then try to also show score if results are enabled
     if (examState.test.showResults) {
       await showResult();
-    } else {
-      document.getElementById('examBody').style.display = 'none';
-      document.getElementById('resultScreen').style.display = 'flex';
-      document.getElementById('resultScore').textContent = '✓';
-      document.getElementById('resultTitle').textContent = 'Test Submitted!';
-      document.getElementById('resultSub').textContent = 'Your answers have been recorded. Results will be published by your teacher.';
-      document.getElementById('resultStats').innerHTML = '';
-      document.getElementById('resultIcon').className = 'result-icon submitted';
     }
   } catch(e) {
     console.error(e);
     showToast('Submission error. Please contact your teacher.', 'error');
   }
 }
-
 async function showResult() {
   try {
     const res = await fetch(`${BASE_URL}/student/tests/${examState.test.examCode}/result/${currentUser.id}`);
@@ -1211,7 +1213,7 @@ function confirmLogout() {
     sessionStorage.removeItem('quizely_user');
     localStorage.removeItem('quizely_user');
     showToast('Signing out…');
-    setTimeout(() => window.location.href = '/login.html', 900);
+    setTimeout(() => window.location.href = 'login.html', 900); // no leading slash
   }, true);
 }
 

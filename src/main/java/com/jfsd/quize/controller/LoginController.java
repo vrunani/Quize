@@ -11,13 +11,20 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Optional;
 
 @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/auth")
 public class LoginController {
-
+        @GetMapping("/api/auth/users/count")
+    public ResponseEntity<?> countStudents() {
+        long count = userRepository.findAll().stream()
+            .filter(u -> "STUDENT".equalsIgnoreCase(u.getRole()) && Boolean.TRUE.equals(u.getIsActive()))
+            .count();
+        return ResponseEntity.ok(Map.of("studentCount", count));
+    }
     @Autowired
     private UserRepository userRepository;
 

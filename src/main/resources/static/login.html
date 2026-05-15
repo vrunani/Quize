@@ -1,330 +1,100 @@
+
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+*{box-sizing:border-box;margin:0;padding:0}
+.page{display:flex;width:100%;min-height:580px;font-family:var(--font-sans);border-radius:16px;overflow:hidden}
+.left-panel{flex:1 1 55%;background:#fff;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:400px}
+#artCanvas{position:absolute;inset:0;width:100%;height:100%}
+.left-brand{position:relative;z-index:10;text-align:center;pointer-events:none}
+.brand-name{font-weight:500;color:#07585b;letter-spacing:-1px;font-size:clamp(2rem,5vw,3.8rem);line-height:1}
+.brand-tag{font-size:clamp(0.78rem,1.8vw,0.95rem);color:#03969d;margin-top:8px;opacity:0.85}
+.brand-orb{width:80px;height:80px;margin:0 auto 18px;position:relative}
+.orb-ring{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(3,150,157,0.25);animation:orbSpin 8s linear infinite}
+.orb-ring:nth-child(2){inset:10px;animation-direction:reverse;animation-duration:5s;border-color:rgba(202,171,213,0.35)}
+.orb-ring:nth-child(3){inset:20px;animation-duration:3.5s;border-color:rgba(3,150,157,0.5)}
+.orb-dot{position:absolute;top:50%;left:50%;width:18px;height:18px;background:#07585b;border-radius:50%;transform:translate(-50%,-50%)}
+@keyframes orbSpin{to{transform:rotate(360deg)}}
 
-  .page {
-    display: flex;
-  width: 100%;
-  min-height: 100vh; /* full screen height */
-  flex-wrap: wrap; /* allows stacking on small screens */
-  font-family: var(--font-sans);
-  border-radius: 16px;
-  overflow: hidden;
-  }
+.right-panel{flex:1 1 45%;min-width:300px;background:linear-gradient(160deg,#caabd5 0%,#83749f 60%,#5a4d7a 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:clamp(1.5rem,4vw,2.8rem);position:relative;overflow:hidden}
+.rp-bg{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.rp-blob{position:absolute;border-radius:50%;filter:blur(30px);opacity:0.18}
+.rp-blob-1{width:200px;height:200px;background:#fff;top:-60px;right:-60px;animation:blobFloat 7s ease-in-out infinite}
+.rp-blob-2{width:150px;height:150px;background:#caabd5;bottom:-40px;left:-40px;animation:blobFloat 9s ease-in-out infinite reverse}
+.rp-blob-3{width:90px;height:90px;background:#fff;top:50%;right:-10px;animation:blobFloat 5s ease-in-out infinite}
+@keyframes blobFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-14px) scale(1.06)}}
 
-  /* LEFT — white with teal/blue interactive art */
-  .left-panel {
-    flex: 1 1 55%;
-  min-height: 400px;
-    background: #fff;
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+.form-logo{width:46px;height:46px;background:rgba(255,255,255,0.18);border-radius:13px;display:flex;align-items:center;justify-content:center;margin-bottom:1rem;border:1px solid rgba(255,255,255,0.3);backdrop-filter:blur(4px);animation:logoAppear 0.6s ease}
+@keyframes logoAppear{from{transform:scale(0.6) rotate(-15deg);opacity:0}to{transform:scale(1) rotate(0deg);opacity:1}}
+.form-title{font-size:clamp(1.3rem,3vw,1.9rem);font-weight:500;color:#fff;margin-bottom:4px;text-align:center}
+.form-sub{font-size:clamp(0.78rem,1.8vw,0.9rem);color:rgba(255,255,255,0.7);text-align:center;margin-bottom:1.8rem}
 
-  #artCanvas {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-  }
+.field-wrap{width:100%;margin-bottom:1rem}
+.field-label{display:block;font-size:11px;font-weight:500;color:rgba(255,255,255,0.85);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:5px}
+.qinput{width:100%;background:rgba(255,255,255,0.13);border:1.5px solid rgba(255,255,255,0.22);border-radius:10px;padding:11px 14px;font-size:14px;color:#fff;outline:none;transition:border-color 0.2s,background 0.2s,transform 0.15s;font-family:var(--font-sans)}
+.qinput::placeholder{color:rgba(255,255,255,0.4)}
+.qinput:focus{border-color:rgba(255,255,255,0.75);background:rgba(255,255,255,0.2);transform:translateY(-1px)}
+.pw-wrap{position:relative}
+.pw-wrap .qinput{padding-right:44px}
+.eye-btn{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.65);display:flex;align-items:center;justify-content:center;transition:color 0.2s,transform 0.2s;padding:0}
+.eye-btn:hover{color:#fff;transform:translateY(-50%) scale(1.15)}
 
-  .left-brand {
-    position: relative;
-    z-index: 10;
-    text-align: center;
-    pointer-events: none;
-  }
+.role-group{display:flex;gap:8px;width:100%;position:relative}
+.role-pill{position:absolute;top:0;bottom:0;width:calc(50% - 4px);background:rgba(255,255,255,0.28);border-radius:9px;transition:transform 0.28s cubic-bezier(0.34,1.4,0.64,1);pointer-events:none}
+.role-btn{flex:1;padding:10px 0;border-radius:9px;border:1.5px solid rgba(255,255,255,0.22);background:transparent;font-size:13px;font-weight:500;color:rgba(255,255,255,0.65);cursor:pointer;transition:color 0.25s,border-color 0.25s;text-align:center;position:relative;z-index:1}
+.role-btn.active{color:#fff;border-color:transparent}
 
-  .left-brand-name {
-    font-weight: 500;
-    color: #07585b;
-    letter-spacing: -1px;
-    font-size: clamp(2rem, 6vw, 4rem);
-    line-height: 1;
-  }
+.sign-btn{width:100%;padding:12px 0;border-radius:10px;border:none;background:#fff;color:#83749f;font-size:14px;font-weight:500;cursor:pointer;margin-top:1.3rem;letter-spacing:0.02em;transition:transform 0.15s,box-shadow 0.2s;position:relative;overflow:hidden}
+.sign-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.22)}
+.sign-btn:active{transform:scale(0.98)}
+.sign-btn-inner{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:8px}
+.sign-btn-shine{position:absolute;inset:0;background:linear-gradient(120deg,transparent 30%,rgba(131,116,159,0.12) 50%,transparent 70%);transform:translateX(-100%);transition:transform 0s}
+.sign-btn:hover .sign-btn-shine{transform:translateX(100%);transition:transform 0.5s ease}
 
-  .left-brand-tag {
-     font-size: clamp(0.8rem, 2vw, 1rem);
-    color: #03969d;
-    margin-top: 8px;
-    opacity: 0.85;
-  }
+.form-footer{font-size:12px;color:rgba(255,255,255,0.5);text-align:center;margin-top:1.1rem}
+.form-footer a{color:rgba(255,255,255,0.88);text-decoration:none;font-weight:500}
+.form-footer a:hover{text-decoration:underline}
 
-  .left-stats {
-    display: flex;
-    gap: 28px;
-    justify-content: center;
-    margin-top: 28px;
-  }
+.demo-box{width:100%;margin-top:1.2rem;border-radius:10px;background:rgba(255,255,255,0.09);border:1px dashed rgba(255,255,255,0.2);padding:10px 14px;font-size:12px;color:rgba(255,255,255,0.65)}
+.demo-box strong{color:rgba(255,255,255,0.9)}
+.demo-row{display:flex;gap:16px;margin-top:4px;flex-wrap:wrap}
+.demo-chip{font-size:11px;background:rgba(255,255,255,0.12);border-radius:6px;padding:4px 8px;color:rgba(255,255,255,0.8);cursor:pointer;transition:background 0.2s}
+.demo-chip:hover{background:rgba(255,255,255,0.22)}
 
-  .stat-item { text-align: center; }
-  .stat-num { font-size: 26px; font-weight: 500; color: #07585b; line-height: 1; }
-  .stat-lbl { font-size: 11px; color: #03969d; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.8; }
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+.shake{animation:shake 0.38s ease}
 
-  /* RIGHT — purple gradient */
-  .right-panel {
-    flex: 1 1 45%;
-  min-width: 320px;
-  padding: clamp(1.5rem, 4vw, 3rem);
-    background: linear-gradient(160deg, #caabd5 0%, #83749f 60%, #5a4d7a 100%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 2.5rem 2.8rem;
-    position: relative;
-    overflow: hidden;
-  }
+@keyframes fieldIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.field-wrap{animation:fieldIn 0.45s ease backwards}
+.field-wrap:nth-child(1){animation-delay:0.05s}
+.field-wrap:nth-child(2){animation-delay:0.12s}
+.field-wrap:nth-child(3){animation-delay:0.19s}
 
-  /* subtle decorative circles on right panel */
-  .rp-deco {
-    position: absolute;
-    border-radius: 50%;
-    pointer-events: none;
-  }
-  .rp-deco-1 {
-    width: 260px; height: 260px;
-    border: 1px solid rgba(255,255,255,0.12);
-    top: -80px; right: -80px;
-  }
-  .rp-deco-2 {
-    width: 180px; height: 180px;
-    border: 1px solid rgba(255,255,255,0.1);
-    bottom: -60px; left: -50px;
-  }
-  .rp-deco-3 {
-    width: 80px; height: 80px;
-    background: rgba(255,255,255,0.07);
-    top: 55%; right: -20px;
-  }
-
-  /* Form elements */
-  .form-logo {
-    width: 46px; height: 46px;
-    background: rgba(255,255,255,0.18);
-    border-radius: 13px;
-    display: flex; align-items: center; justify-content: center;
-    margin-bottom: 1rem;
-    border: 1px solid rgba(255,255,255,0.25);
-  }
-
-  .form-title {
-     font-size: clamp(1.3rem, 3vw, 2rem);
-    font-weight: 500;
-    color: #fff;
-    margin-bottom: 4px;
-    text-align: center;
-  }
-
-  .form-sub {
-    font-size: clamp(0.8rem, 2vw, 1rem);
-    color: rgba(255,255,255,0.7);
-    text-align: center;
-    margin-bottom: 2rem;
-  }
-
-  .field-wrap { width: 100%; margin-bottom: 1.1rem; }
-
-  .field-label {
-    display: block;
-    font-size: 11px;
-    font-weight: 500;
-    color: rgba(255,255,255,0.85);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-bottom: 6px;
-  }
-
-  .qinput {
-    width: 100%;
-    background: rgba(255,255,255,0.15);
-    border: 1.5px solid rgba(255,255,255,0.25);
-    border-radius: 10px;
-    padding: 11px 14px;
-    font-size: 14px;
-    color: #fff;
-    outline: none;
-    transition: border-color 0.2s, background 0.2s;
-  }
-  .qinput::placeholder { color: rgba(255,255,255,0.45); }
-  .qinput:focus {
-    border-color: rgba(255,255,255,0.7);
-    background: rgba(255,255,255,0.22);
-  }
-
-  .pw-wrap { position: relative; }
-  .pw-wrap .qinput { padding-right: 44px; }
-
-  .eye-btn {
-    position: absolute;
-    right: 12px; top: 50%;
-    transform: translateY(-50%);
-    background: none; border: none;
-    cursor: pointer;
-    color: rgba(255,255,255,0.7);
-    display: flex; align-items: center; justify-content: center;
-    transition: color 0.2s;
-  }
-  .eye-btn:hover { color: #fff; }
-
-  .role-group { display: flex; gap: 8px; width: 100%; }
-
-  .role-btn {
-    flex: 1;
-    padding: 10px 0;
-    border-radius: 10px;
-    border: 1.5px solid rgba(255,255,255,0.25);
-    background: rgba(255,255,255,0.1);
-    font-size: 13px;
-    font-weight: 500;
-    color: rgba(255,255,255,0.75);
-    cursor: pointer;
-    transition: all 0.22s;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-  }
-  .role-btn::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: rgba(255,255,255,0);
-    transition: background 0.2s;
-  }
-  .role-btn:hover::after { background: rgba(255,255,255,0.06); }
-
-  .role-btn.active {
-    background: rgba(255,255,255,0.28);
-    border-color: rgba(255,255,255,0.6);
-    color: #fff;
-  }
-
-  .sign-btn {
-    width: 100%;
-    padding: 12px 0;
-    border-radius: 10px;
-    border: none;
-    background: #fff;
-    color: #83749f;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    margin-top: 1.4rem;
-    letter-spacing: 0.02em;
-    transition: transform 0.15s, box-shadow 0.2s, background 0.2s;
-  }
-  .sign-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.18);
-  }
-  .sign-btn:active { transform: scale(0.98); }
-
-  .form-footer {
-    font-size: 12px;
-    color: rgba(255,255,255,0.55);
-    text-align: center;
-    margin-top: 1.2rem;
-  }
-  .form-footer a { color: rgba(255,255,255,0.9); text-decoration: none; font-weight: 500; }
-  .form-footer a:hover { text-decoration: underline; }
-
-  .divider {
-    display: flex; align-items: center; gap: 10px;
-    margin: 1rem 0; width: 100%;
-  }
-  .divider-line { flex: 1; height: 1px; background: rgba(255,255,255,0.2); }
-  .divider-text { font-size: 12px; color: rgba(255,255,255,0.5); }
-
-  .social-row { display: flex; gap: 8px; width: 100%; }
-  .social-btn {
-    flex: 1;
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-    padding: 9px 0;
-    border-radius: 9px;
-    border: 1.5px solid rgba(255,255,255,0.22);
-    background: rgba(255,255,255,0.1);
-    font-size: 13px;
-    color: rgba(255,255,255,0.8);
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .social-btn:hover {
-    background: rgba(255,255,255,0.18);
-    border-color: rgba(255,255,255,0.4);
-    color: #fff;
-  }
-
-  /* Animated input shake on empty submit */
-  @keyframes shake {
-    0%,100% { transform: translateX(0); }
-    20%,60% { transform: translateX(-6px); }
-    40%,80% { transform: translateX(6px); }
-  }
-  .shake { animation: shake 0.4s ease; }
-
-  /* Ripple on sign-in button */
-  .ripple {
-    position: absolute;
-    border-radius: 50%;
-    background: rgba(131,116,159,0.25);
-    transform: scale(0);
-    animation: rippleAnim 0.55s linear;
-    pointer-events: none;
-  }
-  @keyframes rippleAnim {
-    to { transform: scale(4); opacity: 0; }
-  }
-
-  .sign-btn { position: relative; overflow: hidden; }
-@media (max-width: 768px) {
-  .page {
-    flex-direction: column;
-  }
-
-  .left-panel,
-  .right-panel {
-    width: 100%;
-    min-width: 100%;
-  }
-
-  .right-panel {
-    padding: 2rem;
-  }
-
-  .left-brand-name {
-    font-size: 2.5rem;
-  }
-}
-  /* Focus ring visible */
-  .qinput:focus-visible { box-shadow: 0 0 0 3px rgba(255,255,255,0.2); }
+@media(max-width:680px){.page{flex-direction:column}.left-panel,.right-panel{width:100%;min-width:100%}}
 </style>
 
 <div class="page">
-
-  <!-- LEFT — white, interactive canvas -->
   <div class="left-panel">
     <canvas id="artCanvas"></canvas>
     <div class="left-brand">
-      <div class="left-brand-name">Quizely</div>
-      <div class="left-brand-tag">Learn smarter. Score higher.</div>
-      
+      <div class="brand-orb">
+        <div class="orb-ring"></div>
+        <div class="orb-ring"></div>
+        <div class="orb-ring"></div>
+        <div class="orb-dot"></div>
+      </div>
+      <div class="brand-name">Quizely</div>
+      <div class="brand-tag">Learn smarter. Score higher.</div>
     </div>
   </div>
 
-  <!-- RIGHT — purple form -->
   <div class="right-panel">
-    <div class="rp-deco rp-deco-1"></div>
-    <div class="rp-deco rp-deco-2"></div>
-    <div class="rp-deco rp-deco-3"></div>
+    <div class="rp-bg">
+      <div class="rp-blob rp-blob-1"></div>
+      <div class="rp-blob rp-blob-2"></div>
+      <div class="rp-blob rp-blob-3"></div>
+    </div>
 
     <div class="form-logo">
-      <svg width="22" height="22" fill="none" stroke="#fff" stroke-width="2.2" viewBox="0 0 24 24">
-        <path d="M9 11l3 3L22 4"/>
-        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-      </svg>
+      <svg width="22" height="22" fill="none" stroke="#fff" stroke-width="2.2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
     </div>
 
     <div class="form-title">Welcome back</div>
@@ -340,211 +110,178 @@
       <div class="pw-wrap">
         <input class="qinput" type="password" placeholder="••••••••" id="pwField"/>
         <button class="eye-btn" onclick="togglePw(this)" type="button" aria-label="Toggle password">
-          <svg id="eyeIcon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-            <circle cx="12" cy="12" r="3"/>
-          </svg>
+          <svg id="eyeIcon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
       </div>
     </div>
 
     <div class="field-wrap" style="margin-bottom:0">
       <label class="field-label">I am a</label>
-      <div class="role-group">
+      <div class="role-group" id="roleGroup">
+        <div class="role-pill" id="rolePill"></div>
         <button class="role-btn active" id="rStudent" onclick="setRole('student')">Student</button>
         <button class="role-btn" id="rTeacher" onclick="setRole('teacher')">Teacher</button>
       </div>
     </div>
 
-    <button class="sign-btn" id="signBtn" onclick="handleLogin(event)">Sign in</button>
-<div >
-    <h2>Demo Login Details</h2>
-        <h3>Teacher Login</h3>
-        <p><b>ID:</b> teacher01</p>
-        <p><b>Password:</b> password123</p>
-    <hr>
-        <h3>Student Login</h3>
-        <p><b>ID:</b> student01</p>
-        <p><b>Password:</b> student123</p>
+    <button class="sign-btn" id="signBtn" onclick="handleLogin(event)">
+      <div class="sign-btn-shine"></div>
+      <div class="sign-btn-inner">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        Sign in
+      </div>
+    </button>
+
+    <div class="demo-box">
+      <strong>Demo credentials</strong>
+      <div class="demo-row">
+        <span class="demo-chip" onclick="fillDemo('teacher')">👨‍🏫 Teacher login</span>
+        <span class="demo-chip" onclick="fillDemo('student')">🎓 Student login</span>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
-/* ── Password toggle ── */
-function togglePw(btn) {
-  var f = document.getElementById('pwField');
-  var icon = btn.querySelector('svg');
-  if (f.type === 'password') {
-    f.type = 'text';
-    icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="1.8"/>';
-  } else {
-    f.type = 'password';
-    icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+function togglePw(btn){
+  var f=document.getElementById('pwField');
+  var icon=btn.querySelector('svg');
+  if(f.type==='password'){
+    f.type='text';
+    icon.innerHTML='<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  }else{
+    f.type='password';
+    icon.innerHTML='<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
   }
 }
 
-/* ── Role switch ── */
-function setRole(role) {
-  document.getElementById('rStudent').classList.toggle('active', role === 'student');
-  document.getElementById('rTeacher').classList.toggle('active', role === 'teacher');
+var currentRole='student';
+function setRole(role){
+  currentRole=role;
+  document.getElementById('rStudent').classList.toggle('active',role==='student');
+  document.getElementById('rTeacher').classList.toggle('active',role==='teacher');
+  document.getElementById('rolePill').style.transform=role==='teacher'?'translateX(calc(100% + 8px))':'translateX(0)';
+}
+setRole('student');
+
+function fillDemo(role){
+  setRole(role);
+  var id=document.getElementById('emailField');
+  var pw=document.getElementById('pwField');
+  if(role==='teacher'){id.value='teacher01';pw.value='password123';}
+  else{id.value='student01';pw.value='student123';}
+  id.style.borderColor='rgba(255,255,255,0.75)';
+  pw.style.borderColor='rgba(255,255,255,0.75)';
+  setTimeout(function(){id.style.borderColor='';pw.style.borderColor='';},1200);
 }
 
-/* ── Login with ripple + shake ── */
-async function handleLogin(e) {
-
-  const idField = document.getElementById("emailField");
-  const pwField = document.getElementById("pwField");
-
-  let role =
-    document.getElementById("rStudent").classList.contains("active")
-      ? "STUDENT"
-      : "TEACHER";
-
-  try {
-
-    const response = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        id: idField.value,
-        password: pwField.value,
-        role: role
-      })
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-
-      // Store full user object so student/teacher pages can read it
-      sessionStorage.setItem('quizely_user', JSON.stringify(data));
-
-      if (data.role === "TEACHER") {
-       sessionStorage.setItem('quizely_user', JSON.stringify(user));
-        window.location.href = "/teacher.html";
-       
-      } else if (data.role === "STUDENT") {
-       sessionStorage.setItem('quizely_user', JSON.stringify(user));
-        window.location.href = "/student.html";
-      } else {
-        alert("Unknown role: " + data.role);
-      }
-    } else {
-      const errorText = await response.text();
+async function handleLogin(e){
+  var idField=document.getElementById('emailField');
+  var pwField=document.getElementById('pwField');
+  if(!idField.value){idField.classList.add('shake');setTimeout(function(){idField.classList.remove('shake')},400);return;}
+  if(!pwField.value){pwField.classList.add('shake');setTimeout(function(){pwField.classList.remove('shake')},400);return;}
+  var role=currentRole==='student'?'STUDENT':'TEACHER';
+  var btn=document.getElementById('signBtn');
+  btn.querySelector('.sign-btn-inner').innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9" stroke-dasharray="56" stroke-dashoffset="56" style="animation:spin 1s linear infinite;transform-origin:center"/></svg> Signing in...';
+  var style=document.createElement('style');
+  style.textContent='@keyframes spin{to{stroke-dashoffset:0;transform:rotate(360deg)}}';
+  document.head.appendChild(style);
+  try{
+    var response=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:idField.value,password:pwField.value,role:role})});
+    if(response.ok){
+      var data=await response.json();
+      sessionStorage.setItem('quizely_user',JSON.stringify(data));
+      if(data.role==='TEACHER')window.location.href='/teacher.html';
+      else if(data.role==='STUDENT')window.location.href='/student.html';
+      else alert('Unknown role: '+data.role);
+    }else{
+      var errorText=await response.text();
       alert(errorText);
+      btn.querySelector('.sign-btn-inner').innerHTML='<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Sign in';
     }
-
+  }catch(err){
+    console.error(err);alert('Login failed');
+    btn.querySelector('.sign-btn-inner').innerHTML='<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Sign in';
   }
-
-  catch(error) {
-    console.error(error);
-    alert("Login Failed");
-  }
-
-}/* ── Counter animation ── */
-function animateCount(el, target, suffix) {
-  var start = 0;
-  var dur = 1600;
-  var step = 16;
-  var inc = target / (dur / step);
-  var timer = setInterval(function() {
-    start += inc;
-    if (start >= target) { start = target; clearInterval(timer); }
-    el.textContent = Math.round(start) + suffix;
-  }, step);
 }
 
-setTimeout(function() {
-  animateCount(document.getElementById('ctr1'), 50, 'k+');
-  animateCount(document.getElementById('ctr2'), 8, 'k+');
-  animateCount(document.getElementById('ctr3'), 200, '+');
-}, 400);
+/* ── Canvas: particle web with mouse attraction + click burst ── */
+var canvas=document.getElementById('artCanvas');
+var ctx=canvas.getContext('2d');
+var mouse={x:-999,y:-999,pressed:false};
+var W,H,nodes=[],burst=[];
+var colors=['#6bc5c6','#03969d','#07585b','#caabd5','#83749f'];
 
-/* ── Interactive canvas — floating teal/blue nodes + mouse repel ── */
-var canvas = document.getElementById('artCanvas');
-var ctx = canvas.getContext('2d');
-var mouse = { x: -999, y: -999 };
-var nodes = [];
-var W, H;
-
-function resize() {
-  W = canvas.width = canvas.offsetWidth;
-  H = canvas.height = canvas.offsetHeight;
-}
+function resize(){W=canvas.width=canvas.offsetWidth;H=canvas.height=canvas.offsetHeight;}
 resize();
 
-var colors = ['#6bc5c6','#03969d','#07585b','#caabd5','#83749f'];
-
-for (var i = 0; i < 38; i++) {
-  nodes.push({
-    x: Math.random() * (W||500),
-    y: Math.random() * (H||600),
-    vx: (Math.random()-0.5)*0.5,
-    vy: (Math.random()-0.5)*0.5,
-    r: 3 + Math.random()*5,
-    color: colors[Math.floor(Math.random()*colors.length)],
-    alpha: 0.3 + Math.random()*0.5
-  });
+for(var i=0;i<45;i++){
+  nodes.push({x:Math.random()*(W||500),y:Math.random()*(H||600),vx:(Math.random()-0.5)*0.45,vy:(Math.random()-0.5)*0.45,r:2.5+Math.random()*4.5,color:colors[Math.floor(Math.random()*colors.length)],alpha:0.35+Math.random()*0.5,base_r:2.5+Math.random()*4.5});
 }
 
-canvas.parentElement.addEventListener('mousemove', function(e) {
-  var rect = canvas.getBoundingClientRect();
-  mouse.x = e.clientX - rect.left;
-  mouse.y = e.clientY - rect.top;
-});
-canvas.parentElement.addEventListener('mouseleave', function() {
-  mouse.x = -999; mouse.y = -999;
+canvas.parentElement.addEventListener('mousemove',function(e){var rect=canvas.getBoundingClientRect();mouse.x=e.clientX-rect.left;mouse.y=e.clientY-rect.top;});
+canvas.parentElement.addEventListener('mouseleave',function(){mouse.x=-999;mouse.y=-999;});
+canvas.parentElement.addEventListener('click',function(e){
+  var rect=canvas.getBoundingClientRect();
+  var bx=e.clientX-rect.left,by=e.clientY-rect.top;
+  for(var i=0;i<12;i++){
+    var ang=Math.random()*Math.PI*2;
+    var spd=1.5+Math.random()*3;
+    burst.push({x:bx,y:by,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,r:2+Math.random()*3,alpha:0.9,color:colors[Math.floor(Math.random()*colors.length)],life:1});
+  }
 });
 
-function draw() {
-  if (canvas.offsetWidth !== W || canvas.offsetHeight !== H) resize();
-  ctx.clearRect(0, 0, W, H);
+var t=0;
+function draw(){
+  if(canvas.offsetWidth!==W||canvas.offsetHeight!==H)resize();
+  ctx.clearRect(0,0,W,H);
+  t+=0.008;
 
-  for (var i = 0; i < nodes.length; i++) {
-    var n = nodes[i];
-    var dx = n.x - mouse.x;
-    var dy = n.y - mouse.y;
-    var dist = Math.sqrt(dx*dx + dy*dy);
-    if (dist < 90) {
-      var force = (90 - dist) / 90 * 1.5;
-      n.vx += (dx/dist)*force*0.06;
-      n.vy += (dy/dist)*force*0.06;
+  for(var i=0;i<nodes.length;i++){
+    var n=nodes[i];
+    var dx=n.x-mouse.x,dy=n.y-mouse.y;
+    var dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist<100){
+      var force=(100-dist)/100*1.8;
+      n.vx+=(dx/dist)*force*0.05;
+      n.vy+=(dy/dist)*force*0.05;
     }
-    n.vx *= 0.97;
-    n.vy *= 0.97;
-    n.x += n.vx;
-    n.y += n.vy;
-    if (n.x < 0) { n.x = 0; n.vx *= -1; }
-    if (n.x > W) { n.x = W; n.vx *= -1; }
-    if (n.y < 0) { n.y = 0; n.vy *= -1; }
-    if (n.y > H) { n.y = H; n.vy *= -1; }
+    n.vx+=Math.sin(t+i*0.3)*0.005;
+    n.vy+=Math.cos(t+i*0.5)*0.005;
+    n.vx*=0.972;n.vy*=0.972;
+    n.x+=n.vx;n.y+=n.vy;
+    if(n.x<0){n.x=0;n.vx*=-1;}if(n.x>W){n.x=W;n.vx*=-1;}
+    if(n.y<0){n.y=0;n.vy*=-1;}if(n.y>H){n.y=H;n.vy*=-1;}
+    n.r=n.base_r+(dist<100?((100-dist)/100)*3:0);
   }
 
-  for (var i = 0; i < nodes.length; i++) {
-    for (var j = i+1; j < nodes.length; j++) {
-      var dx = nodes[i].x - nodes[j].x;
-      var dy = nodes[i].y - nodes[j].y;
-      var d = Math.sqrt(dx*dx+dy*dy);
-      if (d < 20) {
+  for(var i=0;i<nodes.length;i++){
+    for(var j=i+1;j<nodes.length;j++){
+      var dx=nodes[i].x-nodes[j].x,dy=nodes[i].y-nodes[j].y;
+      var d=Math.sqrt(dx*dx+dy*dy);
+      if(d<110){
         ctx.beginPath();
-        ctx.moveTo(nodes[i].x, nodes[i].y);
-        ctx.lineTo(nodes[j].x, nodes[j].y);
-        ctx.strokeStyle = "rgba(3,150,157,0.25)";;
-        ctx.lineWidth = 0.7;
+        ctx.moveTo(nodes[i].x,nodes[i].y);
+        ctx.lineTo(nodes[j].x,nodes[j].y);
+        ctx.strokeStyle='rgba(3,150,157,'+(0.18*(1-d/110)).toFixed(2)+')';
+        ctx.lineWidth=0.8;
         ctx.stroke();
       }
     }
   }
 
-  for (var i = 0; i < nodes.length; i++) {
-    var n = nodes[i];
-    ctx.beginPath();
-    ctx.arc(n.x, n.y, n.r, 0, Math.PI*2);
-    ctx.fillStyle = n.color;
-    ctx.globalAlpha = n.alpha;
-    ctx.fill();
-    ctx.globalAlpha = 1;
+  for(var i=0;i<nodes.length;i++){
+    var n=nodes[i];
+    ctx.beginPath();ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
+    ctx.fillStyle=n.color;ctx.globalAlpha=n.alpha;ctx.fill();ctx.globalAlpha=1;
+  }
+
+  for(var i=burst.length-1;i>=0;i--){
+    var b=burst[i];
+    b.x+=b.vx;b.y+=b.vy;b.vy+=0.08;b.alpha-=0.025;b.life-=0.025;b.r*=0.985;
+    if(b.alpha<=0){burst.splice(i,1);continue;}
+    ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+    ctx.fillStyle=b.color;ctx.globalAlpha=b.alpha;ctx.fill();ctx.globalAlpha=1;
   }
 
   requestAnimationFrame(draw);

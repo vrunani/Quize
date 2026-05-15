@@ -1213,7 +1213,7 @@ function confirmLogout() {
     sessionStorage.removeItem('quizely_user');
     localStorage.removeItem('quizely_user');
     showToast('Signing out…');
-    setTimeout(() => window.location.href = 'login.html', 900); // no leading slash
+    setTimeout(() => window.location.href = 'login.html', 1000); // no leading slash
   }, true);
 }
 

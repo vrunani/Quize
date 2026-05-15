@@ -414,8 +414,11 @@ async function handleLogin(e) {
       sessionStorage.setItem('quizely_user', JSON.stringify(data));
 
       if (data.role === "TEACHER") {
+       sessionStorage.setItem('quizely_user', JSON.stringify(user));
         window.location.href = "/teacher.html";
+       
       } else if (data.role === "STUDENT") {
+       sessionStorage.setItem('quizely_user', JSON.stringify(user));
         window.location.href = "/student.html";
       } else {
         alert("Unknown role: " + data.role);
